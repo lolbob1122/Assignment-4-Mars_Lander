@@ -30,7 +30,7 @@ def marsatm(h):
     # If the altitude is outside the range in the table, handle it
     raise ValueError(f"Altitude {h} km is out of the range covered by the table.")
 #------------------------------------------------------------#
-# marsinit()  # Initialize marstable
+marsinit()  # Initialize marstable
 # Running = True
 # while Running:
 #     h = input('Define altitude [km]: ')
