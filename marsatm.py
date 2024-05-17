@@ -6,6 +6,7 @@ def marsinit():
             marstable.append(line.split())
         marstable = marstable[2:]  # Skip the first two lines as they are headers
 def marsatm(h):
+    marsinit()
     global marstable  # Use the global marstable
     h = float(h)  # Convert input altitude to a float
     columns = list(zip(*marstable))  # Transpose the table to get columns
@@ -30,7 +31,7 @@ def marsatm(h):
     # If the altitude is outside the range in the table, handle it
     raise ValueError(f"Altitude {h} km is out of the range covered by the table.")
 #------------------------------------------------------------#
-marsinit()  # Initialize marstable
+
 # Running = True
 # while Running:
 #     h = input('Define altitude [km]: ')

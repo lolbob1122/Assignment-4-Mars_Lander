@@ -1,7 +1,7 @@
 import marsatm as ma
 import matplotlib.pyplot as plt
 from math import cos, sin, pi, sqrt
-
+import test2 as t
 # Constants
 g0 = 3.711  # Mars gravity in m/s^2
 v0 = 262  # Initial velocity in m/s
@@ -13,6 +13,8 @@ k = 0.05  # Proportional constant for control input
 t = 0  # Initial time
 dt = 0.1  # Time step in seconds
 marsatm = ma.marsatm
+
+print(t.test)
 
 # Lists to store the results for plotting
 ttab = []
