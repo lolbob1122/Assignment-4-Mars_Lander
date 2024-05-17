@@ -1,7 +1,7 @@
 import marsatm as ma
 import matplotlib.pyplot as plt
 from math import cos, sin, pi, sqrt
-import test2 as t
+
 # Constants
 g0 = 3.711  # Mars gravity in m/s^2
 v0 = 262  # Initial velocity in m/s
@@ -14,7 +14,6 @@ t = 0  # Initial time
 dt = 0.1  # Time step in seconds
 marsatm = ma.marsatm
 
-print(t.test)
 
 # Lists to store the results for plotting
 ttab = []
@@ -27,10 +26,10 @@ ytab = []
 vx = v0 * cos(gamma * pi / 180)
 vy = v0 * sin(gamma * pi / 180)
 x = 0
-y = 20
+y = 20000
 
 # Simulation loop
-while y > 0 and t < 10.0:  # Continue until the rover lands or 10 seconds pass
+while y > 2 and t < 10.0:  # Continue until the rover lands or 10 seconds pass
     p, rho, temp, c = marsatm(y)
     
     # Calculate speed and drag force
