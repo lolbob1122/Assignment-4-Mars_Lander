@@ -7,7 +7,7 @@ def marsinit():
         marstable = marstable[2:]  # Skip the first two lines as they are headers
 def marsatm(h):
     global marstable  # Use the global marstable
-    h = float(h)  # Convert input altitude to a float
+    h = float(h)/1000  # Convert input altitude to a float
     columns = list(zip(*marstable))  # Transpose the table to get columns
     altitudes = [float(i) for i in columns[0]]  # Convert altitude column to floats
     densities = [float(i) for i in columns[2]]
@@ -25,7 +25,7 @@ def marsatm(h):
             rho = rho1 + k * (rho2 - rho1)
             temp = t1 + k * (t2 - t1)
             c = c1 + k * (c2 - c1)
-            p = rho * temp * 188.92
+            p = rho * temp * 191.84
             return p, rho, temp, c
     # If the altitude is outside the range in the table, handle it
     raise ValueError(f"Altitude {h} km is out of the range covered by the table.")
@@ -42,5 +42,5 @@ marsinit()
 #     again = input("run again? [y/n]")
 #     if again == 'y' or again == 'Y':
 #         continue
-#     else:
+    # else:
 #       break

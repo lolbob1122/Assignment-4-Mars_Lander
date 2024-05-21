@@ -1,78 +1,181 @@
-import marsatm as ma
+import numpy as np
 import matplotlib.pyplot as plt
-from math import cos, sin, pi, sqrt
+from marsatm import marsatm
 
 # Constants
-g0 = 3.711  # Mars gravity in m/s^2
-v0 = 262  # Initial velocity in m/s
-CdS = 4.92  # Drag coefficient * reference area
-V_e = 4400  # Effective exhaust velocity in m/s
-m_zfw = 699  # Mass of the rover in kg
-gamma = -20  # Initial flight path angle in degrees
-k = 0.05  # Proportional constant for control input
-t = 0  # Initial time
-dt = 0.1  # Time step in seconds
-marsatm = ma.marsatm
-
-
-# Lists to store the results for plotting
-ttab = []
-vxtab = []
-vytab = []
-xtab = []
-ytab = []
+g0 = 3.711  # Martian gravity in m/s^2
+CdS = 4.92  # Drag coefficient * reference area in m^2
+ve = 4400   # Effective exhaust velocity in m/s
+m_zfw = 699.0  # Zero fuel weight in kg
+kv = 0.05  # Control gain for thrust
 
 # Initial conditions
-vx = v0 * cos(gamma * pi / 180)
-vy = v0 * sin(gamma * pi / 180)
+v0 = 262  # Initial velocity in m/s
+h0 = 20000  # Initial altitude in meters
+gamma0 = np.radians(-20)  # Initial flight path angle in radians
+dt = 0.1  # Time step in seconds
+max_burn_rate = 5  # Maximum burn rate in kg/s
+altitude_threshold = 0.3  # Altitude threshold below which thrusters are not used in meters
+
+# Initial state
+vx = v0 * np.cos(gamma0)
+vy = v0 * np.sin(gamma0)
 x = 0
-y = 20000
+y = h0 
+mass = m_zfw  # Starting with zero fuel
 
-# Simulation loop
-while y > 2 and t < 10.0:  # Continue until the rover lands or 10 seconds pass
-    p, rho, temp, c = marsatm(y)
-    
-    # Calculate speed and drag force
-    v = sqrt(vx**2 + vy**2)
-    Fdrag = CdS * 0.5 * rho * v**2
-    
-    # Decompose drag force into x and y components
-    Fdrag_x = Fdrag * (vx / v)
-    Fdrag_y = Fdrag * (vy / v)
-    
-    # Calculate net forces in x and y directions
-    Fxtot = -Fdrag_x
-    Fytot = -m_zfw * g0 - Fdrag_y
-    
-    # Calculate thrust
-    mass_flow = m_zfw * g0 / V_e + k * (m_zfw * g0 - m_zfw * g0 * cos(gamma * pi / 180)) / dt
-    F_thrust = mass_flow * V_e
-    
-    # Calculate accelerations in x and y directions
-    ax = (Fxtot + F_thrust) / m_zfw
-    ay = (Fytot + F_thrust) / m_zfw
-    
-    # Update velocities
-    vx = vx + ax * dt
-    vy = vy + ay * dt
-    
-    # Update positions
-    x = x + vx * dt
-    y = y + vy * dt
-    
-    # Update time
-    t = t + dt
-    
-    # Store the results for plotting
-    ttab.append(t)
-    vxtab.append(vx)
-    vytab.append(vy)
-    xtab.append(x)
-    ytab.append(y)
+# Lists for storing results for plotting
+x_list = [x]
+y_list = [y]
+vx_list = [vx]
+vy_list = [vy]
+mass_list = [mass]
+time_list = [0]
+thrust_list = [0]
 
-# Plot the trajectory
-plt.plot(xtab, ytab)
-plt.xlabel('Horizontal Distance (m)')
-plt.ylabel('Vertical Distance (m)')
-plt.title('Rover Entry Trajectory on Mars with Thrust')
+def get_drag_force(v, h):
+    p, rho, temp, c = marsatm(h)
+    F_drag = 0.5 * CdS * rho * v**2
+    return F_drag
+
+def thrust_control(h, vy, mass):
+    if h < altitude_threshold:
+        return 0  # Do not use thrusters below the altitude threshold
+
+    vy_ref = -2.0  # Target landing speed in m/s
+    delta_vy = vy_ref - vy
+    burn_rate = mass * g0 / ve + kv * delta_vy
+    burn_rate = min(burn_rate, max_burn_rate)  # Cap the burn rate at maximum
+    burn_rate = max(burn_rate, 0)  # Ensure burn rate is non-negative
+    return burn_rate
+
+t = 0
+while y > 0:
+    v = np.sqrt(vx**2 + vy**2)
+    gamma = np.arctan2(vy, vx)
+    
+    F_drag = get_drag_force(v, y)
+    burn_rate = thrust_control(y, vy, mass)
+    thrust = burn_rate * ve
+    
+    ax = -(F_drag / mass) * np.cos(gamma)
+    ay = -(F_drag / mass) * np.sin(gamma) - g0 + (thrust / mass)
+    
+    # Backward Euler integration
+    vx -= ax * dt
+    vy -= ay * dt
+    x += vx * dt
+    y += vy * dt
+    mass -= burn_rate * dt
+    
+    # Store results
+    x_list.append(x)
+    y_list.append(y)
+    vx_list.append(vx)
+    vy_list.append(vy)
+    mass_list.append(mass)
+    thrust_list.append(thrust)
+    time_list.append(t)
+    
+    t += dt
+
+# Step 3: Plotting results
+plt.figure(figsize=(12, 10))
+
+plt.subplot(231)
+plt.plot(x_list, y_list)
+plt.xlabel('x (m)')
+plt.ylabel('y (m)')
+plt.title('Trajectory')
+
+plt.subplot(232)
+plt.plot(time_list, np.sqrt(np.array(vx_list)**2 + np.array(vy_list)**2))
+plt.xlabel('Time (s)')
+plt.ylabel('Speed (m/s)')
+plt.title('Speed vs Time')
+
+plt.subplot(233)
+plt.plot(time_list, mass_list)
+plt.xlabel('Time (s)')
+plt.ylabel('Mass (kg)')
+plt.title('Mass vs Time')
+
+plt.subplot(234)
+plt.plot(time_list, y_list)
+plt.xlabel('Time (s)')
+plt.ylabel('Altitude (m)')
+plt.title('Altitude vs Time')
+
+plt.subplot(235)
+plt.plot(time_list, np.degrees(np.arctan2(vy_list, vx_list)))
+plt.xlabel('Time (s)')
+plt.ylabel('Flight Path Angle (degrees)')
+plt.title('Flight Path Angle vs Time')
+
+plt.subplot(236)
+plt.plot(time_list, thrust_list)
+plt.xlabel('Time (s)')
+plt.ylabel('Thrust (N)')
+plt.title('Thrust vs Time')
+
+plt.tight_layout()
 plt.show()
+
+# Step 4: Optimization
+def simulate_landing(hT, mfuel):
+    # Reset initial conditions
+    vx = v0 * np.cos(gamma0)
+    vy = v0 * np.sin(gamma0)
+    x = 0
+    y = h0
+    mass = m_zfw + mfuel
+    t = 0
+
+    while y > 0:
+        v = np.sqrt(vx**2 + vy**2)
+        gamma = np.arctan2(vy, vx)
+        
+        F_drag = get_drag_force(v, y)
+        burn_rate = thrust_control(y, vy, mass) if y < hT else 0
+        thrust = burn_rate * ve
+        
+        ax = -(F_drag / mass) * np.cos(gamma)
+        ay = -(F_drag / mass) * np.sin(gamma) - g0 + (thrust / mass)
+        
+        # Backward Euler integration
+        vx -= ax * dt
+        vy -= ay * dt
+        x += vx * dt
+        y += vy * dt
+        mass -= burn_rate * dt
+        
+        t += dt
+        
+        # Terminate if fuel runs out
+        if mass <= m_zfw:
+            mass = m_zfw
+            break
+    
+    return y, np.sqrt(vx**2 + vy**2)
+
+# Determine optimal values for hT and mfuel
+hT = 1000  # Initial guess for thrust altitude in meters
+mfuel = 500  # Initial guess for fuel mass in kg
+
+final_altitude, final_speed = simulate_landing(hT, mfuel)
+
+while final_speed > 2.0:  # Target landing speed is less than 3 m/s
+    hT -= 100  # Decrease thrust altitude
+    final_altitude, final_speed = simulate_landing(hT, mfuel)
+    if hT <= 0:
+        break
+
+while final_speed < 2.0:
+    mfuel -= 10  # Decrease fuel mass
+    final_altitude, final_speed = simulate_landing(hT, mfuel)
+    if mfuel <= 0:
+        break
+
+print(f"Optimal thrust altitude (hT): {hT} meters")
+print(f"Optimal fuel mass (mfuel): {mfuel} kg")
+print(f"Final landing speed: {final_speed} m/s")

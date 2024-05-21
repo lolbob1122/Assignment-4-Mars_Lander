@@ -16,6 +16,7 @@ xtab = []
 ytab = []
 vx = v0 * cos(gamma * pi / 180 )
 vy = v0 * sin(gamma * pi / 180 )
+print(vy)
 x = 0
 y = 20
 print(ma.marsatm(y))
