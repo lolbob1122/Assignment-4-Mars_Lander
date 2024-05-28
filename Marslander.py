@@ -29,7 +29,7 @@ time = 0
 trajectory = []
 
 while h > 0:
-    p, rho, temp, sound = marsatm(h/1000, marstable)
+    p, rho, temp, sound = marsatm(h/1000)
     V_abs = V
     F_drag = 0.5 * CDS * rho * V_abs**2
     if V_yref - V * np.sin(gamma) > 0:
@@ -51,6 +51,7 @@ while h > 0:
     x += Vx * dt
     time += dt
     trajectory.append((time, h, V, np.rad2deg(gamma), m_flow, x))
+    print(Vy, h, m_fuel)
 
 # Convert trajectory to numpy array for easy slicing
 trajectory = np.array(trajectory)

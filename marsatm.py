@@ -7,7 +7,7 @@ def marsinit():
         marstable = marstable[2:]  # Skip the first two lines as they are headers
 def marsatm(h):
     global marstable  # Use the global marstable
-    h = float(h)/1000  # Convert input altitude to a float
+    h = float(h)  # Convert input altitude to a float
     columns = list(zip(*marstable))  # Transpose the table to get columns
     altitudes = [float(i) for i in columns[0]]  # Convert altitude column to floats
     densities = [float(i) for i in columns[2]]
